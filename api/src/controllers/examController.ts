@@ -1,89 +1,65 @@
-import { Request, Response } from 'express';
-import db from '../models';
+import { Request, Response, NextFunction } from 'express';
+import * as examService from '../services/examService';
+import { handleResponse } from '../utils/handleResponse';
 
-// Tạo một kỳ thi mới
-export const createExam = async (req: Request, res: Response) => {
+// Get a single exam by ID
+export const getExamById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const exam = await db.Exam.create(req.body);
-    res.status(201).json(exam);
-  } catch (error) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'An unknown error occurred' });
+    const examId = Number(req.params.id);
+    const examDTO = await examService.findExamById(examId);
+    if (!examDTO) {
+      return next({ status: 404, message: 'Exam not found' });
     }
+    handleResponse(res, 200, 'Exam retrieved successfully', examDTO);
+  } catch (error) {
+    next({ status: 500, message: 'Failed to retrieve exam', error });
   }
 };
 
-// Lấy tất cả các kỳ thi
-export const getAllExams = async (req: Request, res: Response) => {
+// Get all exams
+export const getAllExams = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const exams = await db.Exam.findAll();
-    res.status(200).json(exams);
+    const examsDTO = await examService.getAllExams();
+    handleResponse(res, 200, 'Exams retrieved successfully', examsDTO);
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'An unknown error occurred' });
-    }
+    next({ status: 500, message: 'Failed to retrieve exams', error });
   }
 };
 
-// Lấy một kỳ thi theo ID
-export const getExamById = async (req: Request, res: Response) => {
+// Create a new exam
+export const createExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const exam = await db.Exam.findByPk(req.params.id);
-    if (exam) {
-      res.status(200).json(exam);
-    } else {
-      res.status(404).json({ message: 'Exam not found' });
-    }
+    const newExam = await examService.createExam(req.body);
+    handleResponse(res, 201, 'Exam created successfully', newExam);
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'An unknown error occurred' });
-    }
+    next({ status: 500, message: 'Failed to create exam', error });
   }
 };
 
-// Cập nhật một kỳ thi
-export const updateExam = async (req: Request, res: Response) => {
+// Update an existing exam by ID
+export const updateExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const [updated] = await db.Exam.update(req.body, {
-      where: { id: req.params.id },
-    });
-    if (updated) {
-      const updatedExam = await db.Exam.findByPk(req.params.id);
-      res.status(200).json(updatedExam);
-    } else {
-      res.status(404).json({ message: 'Exam not found' });
+    const examId = Number(req.params.id);
+    const updatedExam = await examService.updateExam(examId, req.body);
+    if (!updatedExam) {
+      return next({ status: 404, message: 'Exam not found' });
     }
+    handleResponse(res, 200, 'Exam updated successfully', updatedExam);
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'An unknown error occurred' });
-    }
+    next({ status: 500, message: 'Failed to update exam', error });
   }
 };
 
-// Xóa một kỳ thi
-export const deleteExam = async (req: Request, res: Response) => {
+// Delete an exam by ID
+export const deleteExam = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const deleted = await db.Exam.destroy({
-      where: { id: req.params.id },
-    });
-    if (deleted) {
-      res.status(204).send();
-    } else {
-      res.status(404).json({ message: 'Exam not found' });
+    const examId = Number(req.params.id);
+    const deleted = await examService.deleteExam(examId);
+    if (!deleted) {
+      return next({ status: 404, message: 'Exam not found' });
     }
+    handleResponse(res, 204, 'Exam deleted successfully');
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'An unknown error occurred' });
-    }
+    next({ status: 500, message: 'Failed to delete exam', error });
   }
 };

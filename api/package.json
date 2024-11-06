@@ -33,6 +33,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "mysql2": "^3.11.3",
+    "openai": "^4.70.2",
     "sequelize": "^6.37.4"
   }
 }

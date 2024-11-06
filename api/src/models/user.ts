@@ -3,34 +3,36 @@ import { DataTypes, Model, Sequelize } from 'sequelize';
 export default (sequelize: Sequelize) => {
   class User extends Model {}
 
-  User.init({
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+  User.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        defaultValue: Sequelize.fn('NOW'),
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+      },
     },
-    userName: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    fullName: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    passWord: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    type: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-  }, {
-    sequelize,
-    tableName: 'user',
-    timestamps: false,
-  });
+    {
+      sequelize,
+      tableName: 'users',
+      timestamps: false,
+    }
+  );
 
   return User;
 };

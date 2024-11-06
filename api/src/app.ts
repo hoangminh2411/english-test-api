@@ -4,7 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import db from './models';
-import examRoutes from './routes/examRoutes';
+import mainRoutes from './routes';
 
 dotenv.config();
 
@@ -17,7 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
 // Định nghĩa các routes
-app.use('/api', examRoutes);
+app.use('/api', mainRoutes);
 
 // Kết nối tới cơ sở dữ liệu và đồng bộ các bảng
 db.sequelize.sync().then(() => {
