@@ -12,4 +12,8 @@ router.get('/exams/:examId/results', resultController.getExamResults);
 // Get overall score for a specific user in a specific exam
 router.get('/users/:userId/exams/:examId/overall-score', resultController.getOverallScore);
 
+
+//submit user exam
+router.post('/submit', resultController.submitExam);
+
 export default router;

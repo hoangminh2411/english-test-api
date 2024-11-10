@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as userService from '../services/userService';
 import { handleResponse } from '../utils/handleResponse';
+import bcrypt from 'bcrypt';
 
 // Get all users
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
@@ -28,13 +29,22 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
 // Create a new user
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const newUser = await userService.createUser(req.body);
+    const { username, password, isAdmin } = req.body;
+
+    // Hash the password before storing it
+    const hashedPassword = await bcrypt.hash(password, 10); // 10 salt rounds
+
+    const newUser = await userService.createUser({
+      username,
+      password: hashedPassword, // Store the hashed password
+      isAdmin,
+    });
+
     handleResponse(res, 201, 'User created successfully', newUser);
   } catch (error) {
     next({ status: 500, message: 'Failed to create user', error });
   }
 };
-
 // Update an existing user by ID
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {

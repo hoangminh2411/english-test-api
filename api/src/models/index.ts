@@ -17,6 +17,7 @@ const sequelize = new Sequelize(
     port: development.port,
     database: 'english_exam_db',
     schema: 'english_exam_db',
+    logging: console.log, // Enable logging for debugging
   }
 );
 
@@ -24,14 +25,18 @@ const db = {
   sequelize,
   Sequelize,
   Exam: Exam(sequelize),
+  Document: Document(sequelize),
   Question: Question(sequelize),
   Answer: Answer(sequelize),
   Result: Result(sequelize),
-  Document: Document(sequelize),
+
   User: User(sequelize),
 };
 
 // Define associations
+// Self-referencing association for Question (parent-child relationship)
+db.Question.hasMany(db.Question, { as: 'children', foreignKey: 'parentId' }); // Changed alias to 'children'
+db.Question.belongsTo(db.Question, { as: 'parent', foreignKey: 'parentId' }); // Changed alias to 'parent'
 
 // An Exam can have many Questions
 db.Exam.hasMany(db.Question, { as: 'questions', foreignKey: 'examId' });
@@ -42,7 +47,7 @@ db.Question.hasMany(db.Answer, { as: 'answers', foreignKey: 'questionId' });
 db.Answer.belongsTo(db.Question, { as: 'question', foreignKey: 'questionId' });
 
 // A Question can have one Document (e.g., image or audio)
-db.Question.hasOne(db.Document, { as: 'document', foreignKey: 'questionId' });
+db.Question.hasOne(db.Document, { as: 'document', foreignKey: 'questionId', onDelete: 'CASCADE' });
 db.Document.belongsTo(db.Question, { as: 'question', foreignKey: 'questionId' });
 
 // A Result belongs to an Exam and is linked to a specific User (candidate)
@@ -54,5 +59,8 @@ db.User.hasMany(db.Result, { as: 'results', foreignKey: 'userId' });
 // A Result is linked to a Question, allowing access to question details (e.g., type)
 db.Result.belongsTo(db.Question, { as: 'question', foreignKey: 'questionId' });
 db.Question.hasMany(db.Result, { as: 'results', foreignKey: 'questionId' });
+
+
+
 
 export default db;

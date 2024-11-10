@@ -1,16 +1,19 @@
+// models/question.ts
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
 // Define the attributes of the Question model
-// Define the attributes of the Question model
 export interface QuestionAttributes {
   id: number;
-  examId: number; // Foreign key to associate with an exam
-  content: string; // The content of the question
-  type: 'SPEAKING' | 'LISTENING' | 'READING' | 'WRITING'; // Type of the question (required)
-  order: number; // Order of the question in the exam
-  createdAt?: Date; // Optional field for creation timestamp
-  updatedAt?: Date; // Optional field for update timestamp
+  examId: number;
+  content: string;
+  type: 'SPEAKING' | 'LISTENING' | 'READING' | 'WRITING';
+  order: number;
+  parentId?: number;
+  documentId?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
+export type CreateQuestionAttributes = Omit<QuestionAttributes, 'id' | 'createdAt' | 'updatedAt'>;
 // Extend the Model class to include the QuestionAttributes
 export class Question extends Model<QuestionAttributes> implements QuestionAttributes {
   public id!: number;
@@ -18,10 +21,17 @@ export class Question extends Model<QuestionAttributes> implements QuestionAttri
   public content!: string;
   public type!: 'SPEAKING' | 'LISTENING' | 'READING' | 'WRITING';
   public order!: number;
+  public parentId?: number;
+  public documentId?: number;
   public createdAt!: Date;
   public updatedAt!: Date;
 
   // Define any associations here if needed
+  public static associate() {
+    // Self-association for parent-child relationship
+    Question.hasMany(Question, { as: 'subQuestions', foreignKey: 'parentId' });
+    Question.belongsTo(Question, { as: 'parentQuestion', foreignKey: 'parentId' });
+  }
 }
 
 // Initialize the Question model
@@ -38,7 +48,7 @@ export default (sequelize: Sequelize) => {
         allowNull: false,
       },
       content: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
       },
       type: {
@@ -49,13 +59,26 @@ export default (sequelize: Sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+      parentId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      documentId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        onDelete: 'SET NULL', // Khi xóa Document, documentId trong Question sẽ được set null
+        onUpdate: 'CASCADE',
+      },
     },
     {
       sequelize,
       tableName: 'questions',
-      timestamps: true, // Automatically manage createdAt and updatedAt fields
+      timestamps: true,
     }
   );
+
+  // Call the association method to set up self-reference
+  Question.associate();
 
   return Question;
 };

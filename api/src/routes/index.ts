@@ -4,6 +4,7 @@ import answerRoutes from './answerRoutes';
 import questionRoutes from './questionRoutes';
 import resultRoutes from './resultRoutes';
 import userRoutes from './userRoutes'
+import authRoutes from './authRoutes'
 
 const router = express.Router();
 
@@ -11,7 +12,8 @@ const router = express.Router();
 router.use('/answers', answerRoutes);
 router.use('/questions', questionRoutes);
 router.use('/users', userRoutes);
-router.use('/exams', examRoutes); // Add exam routes
-router.use('/results', resultRoutes); // Add result routes
+router.use('/exams', examRoutes); 
+router.use('/results', resultRoutes); 
+router.use('/auth', authRoutes);
 
 export default router;

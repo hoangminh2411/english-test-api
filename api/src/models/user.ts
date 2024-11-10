@@ -1,8 +1,29 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
-export default (sequelize: Sequelize) => {
-  class User extends Model {}
+// Define the attributes of the User model
+export interface UserAttributes {
+  id: number; // Auto-generated ID
+  username: string; // Username for the user
+  password: string; // Hashed password
+  isAdmin?: boolean; // Optional field to indicate if the user is an admin
+  createdAt?: Date; // Optional field for creation timestamp
+  updatedAt?: Date; // Optional field for update timestamp
+}
 
+// Extend the Model class to include the UserAttributes
+export class User extends Model<UserAttributes> implements UserAttributes {
+  public id!: number; // Required, auto-incremented
+  public username!: string;
+  public password!: string;
+  public isAdmin?: boolean ;
+  public createdAt!: Date;
+  public updatedAt!: Date;
+
+  // Define any associations here if needed
+}
+
+// Initialize the User model
+export default (sequelize: Sequelize) => {
   User.init(
     {
       id: {
@@ -10,27 +31,25 @@ export default (sequelize: Sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      name: {
+      username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true, // Ensure usernames are unique
+      },
+      password: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: Sequelize.fn('NOW'),
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
+      isAdmin: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: false, // Default to false if not specified
       },
     },
     {
       sequelize,
-      tableName: 'users',
-      timestamps: false,
+      tableName: 'users', // Name of the table in the database
+      timestamps: true, // Automatically manage createdAt and updatedAt fields
     }
   );
 

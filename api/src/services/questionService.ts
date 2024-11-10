@@ -1,5 +1,5 @@
 import db from '../models';
-import { QuestionAttributes } from '../models/question'; // Import the Question attributes
+import { CreateQuestionAttributes, QuestionAttributes } from '../models/question'; // Import the Question attributes
 
 // Get all questions for a specific exam
 export const getQuestionsByExamId = async (examId: number): Promise<QuestionAttributes[]> => {
@@ -35,22 +35,22 @@ export const getQuestionById = async (id: number): Promise<QuestionAttributes | 
 };
 
 // Create a new question for a specific exam
-export const createQuestion = async (examId: number, questionData: QuestionAttributes): Promise<QuestionAttributes> => {
-  const newQuestion = await db.Question.create({
-    ...questionData,
-    examId, // Set the examId for the new question
-  });
-  return newQuestion;
+export const createQuestion = async (examId: number, data: CreateQuestionAttributes) => {
+  const question = await db.Question.create({ ...data, examId } as any);
+  return question; // Trả về instance của Question để có thể sử dụng .toJSON() sau này
 };
 
 // Update an existing question by ID
-export const updateQuestion = async (id: number, questionData: Partial<QuestionAttributes>): Promise<QuestionAttributes | null> => {
-  const [updatedCount, [updatedQuestion]] = await db.Question.update(questionData, {
+export const updateQuestion = async (
+  id: number,
+  questionData: Partial<QuestionAttributes>
+): Promise<QuestionAttributes | null> => {
+  const [updatedCount] = await db.Question.update(questionData, {
     where: { id },
-    returning: true, // Return the updated question
   });
 
-  return updatedCount > 0 ? updatedQuestion : null;
+  // Nếu có bản ghi được cập nhật, lấy lại question từ DB
+  return updatedCount > 0 ? await db.Question.findByPk(id) : null;
 };
 
 // Delete a question by ID

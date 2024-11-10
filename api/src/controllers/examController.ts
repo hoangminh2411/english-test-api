@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as examService from '../services/examService';
 import { handleResponse } from '../utils/handleResponse';
+import { handleError } from '../utils/errorHandler';
 
 // Get a single exam by ID
 export const getExamById = async (req: Request, res: Response, next: NextFunction) => {
@@ -8,11 +9,11 @@ export const getExamById = async (req: Request, res: Response, next: NextFunctio
     const examId = Number(req.params.id);
     const examDTO = await examService.findExamById(examId);
     if (!examDTO) {
-      return next({ status: 404, message: 'Exam not found' });
+      return handleError(res, new Error('Exam not found'));
     }
     handleResponse(res, 200, 'Exam retrieved successfully', examDTO);
   } catch (error) {
-    next({ status: 500, message: 'Failed to retrieve exam', error });
+    handleError(res, error); // Use the common error handler
   }
 };
 
@@ -22,17 +23,25 @@ export const getAllExams = async (req: Request, res: Response, next: NextFunctio
     const examsDTO = await examService.getAllExams();
     handleResponse(res, 200, 'Exams retrieved successfully', examsDTO);
   } catch (error) {
-    next({ status: 500, message: 'Failed to retrieve exams', error });
+    handleError(res, error); // Use the common error handler
   }
 };
 
 // Create a new exam
-export const createExam = async (req: Request, res: Response, next: NextFunction) => {
+export const createExam = async (req: any, res: Response, next: NextFunction) => {
   try {
-    const newExam = await examService.createExam(req.body);
+    // Extract the user ID from the request (from the token)
+    const createdBy = req.user?.id; // This assumes you have set req.user in the auth middleware
+
+    if (!createdBy) {
+      return handleResponse(res, 400, 'Missing creator information', null);
+    }
+
+    // Create a new exam, including createdBy from the authenticated user
+    const newExam = await examService.createExam({ ...req.body, createdBy }); // Set createdBy from the authenticated user
     handleResponse(res, 201, 'Exam created successfully', newExam);
   } catch (error) {
-    next({ status: 500, message: 'Failed to create exam', error });
+    handleError(res, error); // Use the common error handler
   }
 };
 
@@ -42,11 +51,11 @@ export const updateExam = async (req: Request, res: Response, next: NextFunction
     const examId = Number(req.params.id);
     const updatedExam = await examService.updateExam(examId, req.body);
     if (!updatedExam) {
-      return next({ status: 404, message: 'Exam not found' });
+      return handleError(res, new Error('Exam not found'));
     }
     handleResponse(res, 200, 'Exam updated successfully', updatedExam);
   } catch (error) {
-    next({ status: 500, message: 'Failed to update exam', error });
+    handleError(res, error); // Use the common error handler
   }
 };
 
@@ -56,10 +65,13 @@ export const deleteExam = async (req: Request, res: Response, next: NextFunction
     const examId = Number(req.params.id);
     const deleted = await examService.deleteExam(examId);
     if (!deleted) {
-      return next({ status: 404, message: 'Exam not found' });
+      // Instead of using next, directly call handleError for 404
+      return handleError(res, new Error('Exam not found'));
     }
-    handleResponse(res, 204, 'Exam deleted successfully');
+     // Use 200 status and provide a message indicating successful deletion
+     handleResponse(res, 200, 'Exam deleted successfully');
   } catch (error) {
-    next({ status: 500, message: 'Failed to delete exam', error });
+    console.error("ERROR", error)
+    handleError(res, error); // Use the common error handler
   }
 };

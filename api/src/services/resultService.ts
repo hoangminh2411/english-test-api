@@ -1,6 +1,7 @@
 import { IExamSubmission } from '../interfaces/exam-submission';
 import db from '../models';
 import { CreateResultAttributes } from '../models/result';
+import { roundUpToDecimal } from '../utils/helper';
 import * as gradingService from './gradingService';
 
 
@@ -14,34 +15,55 @@ interface SkillScores {
 // Main function to process the entire exam submission
 export const processSubmission = async (submissionData: IExamSubmission) => {
   const { userId, examId, answers } = submissionData;
-  const skillScores: SkillScores = { listening: 0, reading: 0, speaking: 0, writing: 0 };
 
+  // Count of questions for each skill
+  const questionCounts: SkillScores = { listening: 35, reading: 40, speaking: 3, writing: 2 }; // Example values for each skill
+
+  // Initialize raw scores for each skill
+  const rawScores: SkillScores = { listening: 0, reading: 0, speaking: 0, writing: 0 };
+
+  // Start a database transaction
   const transaction = await db.sequelize.transaction();
   try {
     for (const answer of answers) {
       const question = await db.Question.findByPk(answer.questionId);
-      
+
       if (!question) throw new Error(`Question ID ${answer.questionId} not found`);
-      const questionData = question.get({ plain: true })
+      const questionData = question.get({ plain: true });
+
+      // Process based on question type
       if (questionData.type === 'LISTENING' || questionData.type === 'READING') {
         const isCorrect = await handleMultipleChoiceAnswer(userId, examId, answer, transaction);
         if (isCorrect) {
-          questionData.type === 'LISTENING' ? skillScores.listening++ : skillScores.reading++;
+          questionData.type === 'LISTENING' ? rawScores.listening++ : rawScores.reading++;
         }
       } else if (questionData.type === 'SPEAKING' || questionData.type === 'WRITING') {
         const freeTextScore = await handleFreeTextAnswer(userId, examId, answer, questionData.content, transaction);
-        questionData.type === 'SPEAKING' ? skillScores.speaking += freeTextScore : skillScores.writing += freeTextScore;
+        questionData.type === 'SPEAKING' ? rawScores.speaking += freeTextScore : rawScores.writing += freeTextScore;
       }
     }
 
+    // Calculate final scores for each skill out of 9.0
+    const finalScores: SkillScores = {
+      listening: (rawScores.listening / questionCounts.listening) * 9,
+      reading: (rawScores.reading / questionCounts.reading) * 9,
+      speaking: rawScores.speaking / questionCounts.speaking,
+      writing: rawScores.writing / questionCounts.writing,
+    };
+
+    // Round the final scores to one decimal place
+    for (const skill in finalScores) {
+      finalScores[skill as keyof SkillScores] = parseFloat(finalScores[skill as keyof SkillScores].toFixed(1));
+    }
+
+    // Commit the transaction and return the scores
     await transaction.commit();
-    return { success: true, scores: skillScores };
+    return { success: true, scores: finalScores };
   } catch (error) {
     await transaction.rollback();
     throw error;
   }
 };
-
 // Helper to process multiple-choice answers and determine correctness
 const handleMultipleChoiceAnswer = async (
   userId: number,
@@ -56,7 +78,8 @@ const handleMultipleChoiceAnswer = async (
   const answerData = correctAnswer.get({ plain: true })
 
   const isCorrect = correctAnswer ? answerData.content === answer.selectedAnswer : false;
-  await saveAnswer(userId, examId, answer.questionId, answer.selectedAnswer, isCorrect, transaction);
+  const score = isCorrect ?  1 : 0;
+  await saveAnswer(userId, examId, answer.questionId, answer.selectedAnswer, isCorrect, transaction,score);
   return isCorrect;
 };
 
@@ -144,20 +167,29 @@ export const getOverallScoreBySkill = async (userId: number, examId: number): Pr
       },
     ],
   });
-
-  const skillScores: SkillScores = { listening: 0, reading: 0, speaking: 0, writing: 0 };
+  // Count of questions for each skill
+  const questionCounts: SkillScores = { listening: 35, reading: 40, speaking: 3, writing: 2 }; // Example values for each skill
+  const rawScores: SkillScores = { listening: 0, reading: 0, speaking: 0, writing: 0 };
 
   results.forEach((result:any) => {
     const questionType = result.question?.type; // Use optional chaining for safety
     const resultScore = result.score || 0;
 
-    if (questionType === 'LISTENING') skillScores.listening += resultScore;
-    else if (questionType === 'READING') skillScores.reading += resultScore;
-    else if (questionType === 'SPEAKING') skillScores.speaking += resultScore;
-    else if (questionType === 'WRITING') skillScores.writing += resultScore;
+    if (questionType === 'LISTENING') rawScores.listening += resultScore;
+    else if (questionType === 'READING') rawScores.reading += resultScore;
+    else if (questionType === 'SPEAKING') rawScores.speaking += resultScore;
+    else if (questionType === 'WRITING') rawScores.writing += resultScore;
   });
 
-  return skillScores;
+  const finalScores: SkillScores = {
+    listening: roundUpToDecimal((rawScores.listening / questionCounts.listening) * 9, 1),
+    reading: roundUpToDecimal((rawScores.reading / questionCounts.reading) * 9, 1),
+    speaking: roundUpToDecimal((rawScores.speaking / questionCounts.speaking), 1),
+    writing: roundUpToDecimal((rawScores.writing / questionCounts.writing), 1),
+  };
+
+
+  return finalScores;
 };
 export function deleteResult(arg0: number) {
   throw new Error('Function not implemented.');

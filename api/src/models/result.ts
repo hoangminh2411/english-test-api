@@ -53,7 +53,7 @@ export default (sequelize: Sequelize) => {
         allowNull: false,
       },
       selectedAnswer: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false,
       },
       isCorrect: {
