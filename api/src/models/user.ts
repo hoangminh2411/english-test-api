@@ -35,6 +35,7 @@ export default (sequelize: Sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true, // Ensure usernames are unique
+      
       },
       password: {
         type: DataTypes.STRING,
@@ -44,12 +45,14 @@ export default (sequelize: Sequelize) => {
         type: DataTypes.BOOLEAN,
         allowNull: true,
         defaultValue: false, // Default to false if not specified
+        field: 'is_admin',
       },
     },
     {
       sequelize,
       tableName: 'users', // Name of the table in the database
-      timestamps: true, // Automatically manage createdAt and updatedAt fields
+      timestamps: true, // Automatically manage createdAt and updatedAt fields,
+      underscored: true, // Use snake_case for this model
     }
   );
 

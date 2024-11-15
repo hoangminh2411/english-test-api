@@ -4,22 +4,22 @@ import { authenticateJWT } from '../middlewares/authMiddleware';
 const router = express.Router();
 
 // Get all questions for a specific exam
-router.get('/exams/:examId',authenticateJWT, questionController.getQuestionsByExamId);
+router.get('/exams/:examId', questionController.getQuestionsByExamId);
 
 // Get a single question by ID
-router.get('/:id',authenticateJWT,  questionController.getQuestionById);
+router.get('/:id',  questionController.getQuestionById);
 
 // Create a new question for a specific exam
-router.post('/exams/:examId',authenticateJWT,  questionController.createQuestion);
+router.post('/exams/:examId',  questionController.createQuestion);
 
 // Update an existing question by ID
-router.put('/:id',authenticateJWT,  questionController.updateQuestion);
+router.put('/:id', questionController.updateQuestion);
 
 // Delete a question by ID
-router.delete('/:id',authenticateJWT,  questionController.deleteQuestion);
+router.delete('/:id', questionController.deleteQuestion);
 
 
 // Import multiple questions for a specific exam
-router.post('/exams/:examId/import', authenticateJWT, questionController.importQuestions);
+router.post('/exams/:examId/import', questionController.importQuestions);
 
 export default router;

@@ -20,23 +20,28 @@ export default (sequelize: Sequelize) => {
       totalTime: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'total_time',
       },
       createdBy: {
         type: DataTypes.STRING,
         allowNull: false,
+        field: 'created_by',
       },
       createdAt: {
         type: DataTypes.DATE,
         defaultValue: Sequelize.fn('NOW'),
+        field: 'created_at',
       },
       updatedAt: {
         type: DataTypes.DATE,
+        field: 'updated_at',
       },
     },
     {
       sequelize,
       tableName: 'exams',
       timestamps: false,
+      underscored: true, // Use snake_case for this model
     }
   );
 

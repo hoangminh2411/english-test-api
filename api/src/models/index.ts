@@ -6,7 +6,10 @@ import Answer from './answer';
 import Result from './result';
 import Document from './document';
 import User from './user';
+import  ExamAttempt  from './exam-attempt';
 
+
+// Initialize Sequelize instance
 const sequelize = new Sequelize(
   development.database || 'default_database_name',
   development.username || 'default_username',
@@ -21,6 +24,7 @@ const sequelize = new Sequelize(
   }
 );
 
+// Initialize models
 const db = {
   sequelize,
   Sequelize,
@@ -29,14 +33,14 @@ const db = {
   Question: Question(sequelize),
   Answer: Answer(sequelize),
   Result: Result(sequelize),
-
   User: User(sequelize),
+  ExamAttempt: ExamAttempt(sequelize), // Add ExamAttempt model
 };
 
 // Define associations
 // Self-referencing association for Question (parent-child relationship)
-db.Question.hasMany(db.Question, { as: 'children', foreignKey: 'parentId' }); // Changed alias to 'children'
-db.Question.belongsTo(db.Question, { as: 'parent', foreignKey: 'parentId' }); // Changed alias to 'parent'
+db.Question.hasMany(db.Question, { as: 'children', foreignKey: 'parentId' });
+db.Question.belongsTo(db.Question, { as: 'parent', foreignKey: 'parentId' });
 
 // An Exam can have many Questions
 db.Exam.hasMany(db.Question, { as: 'questions', foreignKey: 'examId' });
@@ -50,17 +54,20 @@ db.Answer.belongsTo(db.Question, { as: 'question', foreignKey: 'questionId' });
 db.Question.hasOne(db.Document, { as: 'document', foreignKey: 'questionId', onDelete: 'CASCADE' });
 db.Document.belongsTo(db.Question, { as: 'question', foreignKey: 'questionId' });
 
-// A Result belongs to an Exam and is linked to a specific User (candidate)
-db.Result.belongsTo(db.Exam, { as: 'exam', foreignKey: 'examId' });
-db.Result.belongsTo(db.User, { as: 'candidate', foreignKey: 'userId' });
-db.Exam.hasMany(db.Result, { as: 'results', foreignKey: 'examId' });
-db.User.hasMany(db.Result, { as: 'results', foreignKey: 'userId' });
+// An Exam can have many ExamAttempts
+db.Exam.hasMany(db.ExamAttempt, { as: 'attempts', foreignKey: 'examId' });
+db.ExamAttempt.belongsTo(db.Exam, { as: 'exam', foreignKey: 'examId' });
+
+// A User can have many ExamAttempts
+db.User.hasMany(db.ExamAttempt, { as: 'attempts', foreignKey: 'userId' });
+db.ExamAttempt.belongsTo(db.User, { as: 'candidate', foreignKey: 'userId' });
+
+// An ExamAttempt can have many Results
+db.ExamAttempt.hasMany(db.Result, { as: 'results', foreignKey: 'attemptId' });
+db.Result.belongsTo(db.ExamAttempt, { as: 'attempt', foreignKey: 'attemptId' });
 
 // A Result is linked to a Question, allowing access to question details (e.g., type)
 db.Result.belongsTo(db.Question, { as: 'question', foreignKey: 'questionId' });
 db.Question.hasMany(db.Result, { as: 'results', foreignKey: 'questionId' });
-
-
-
 
 export default db;

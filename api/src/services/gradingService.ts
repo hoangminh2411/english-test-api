@@ -1,10 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+
 import { CohereClient } from "cohere-ai";
 const cohere = new CohereClient({
   token: process.env.C_API_KEY,
 });
-
 
 /**
  * Grades a free-text answer by sending it to Cohere for evaluation.

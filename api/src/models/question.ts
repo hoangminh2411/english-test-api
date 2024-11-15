@@ -46,6 +46,7 @@ export default (sequelize: Sequelize) => {
       examId: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'exam_id',
       },
       content: {
         type: DataTypes.TEXT,
@@ -61,19 +62,22 @@ export default (sequelize: Sequelize) => {
       },
       parentId: {
         type: DataTypes.INTEGER,
-        allowNull: true
+        allowNull: true,
+        field: 'parent_id',
       },
       documentId: {
         type: DataTypes.INTEGER,
         allowNull: true,
         onDelete: 'SET NULL', // Khi xóa Document, documentId trong Question sẽ được set null
         onUpdate: 'CASCADE',
+        field: 'document_id',
       },
     },
     {
       sequelize,
       tableName: 'questions',
       timestamps: true,
+      underscored: true, // Use snake_case for this model
     }
   );
 

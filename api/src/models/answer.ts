@@ -39,6 +39,7 @@ export default (sequelize: Sequelize) => {
       questionId: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'question_id',
       },
       content: {
         type: DataTypes.STRING,
@@ -47,12 +48,14 @@ export default (sequelize: Sequelize) => {
       isCorrect: {
         type: DataTypes.BOOLEAN,
         allowNull: true,
+        field: 'is_correct',
       },
     },
     {
       sequelize,
       tableName: 'answers', // Table name in the database
-      timestamps: true, // Automatically manage createdAt and updatedAt fields
+      timestamps: true, // Automatically manage createdAt and updatedAt fields,
+      underscored: true, // Use snake_case for this model
     }
   );
 

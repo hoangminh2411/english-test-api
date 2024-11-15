@@ -44,12 +44,14 @@ export default (sequelize: Sequelize) => {
         allowNull: false,
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
+        field: 'question_id',
       }
     },
     {
       sequelize,
       tableName: 'documents', // Name of the table in the database
-      timestamps: true, // Automatically manage createdAt and updatedAt fields
+      timestamps: true, // Automatically manage createdAt and updatedAt fields,
+      underscored: true, // Use snake_case for this model
     }
   );
 

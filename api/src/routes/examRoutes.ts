@@ -4,18 +4,18 @@ import { authenticateJWT } from '../middlewares/authMiddleware';
 const router = express.Router();
 
 // Get all exams
-router.get('/',authenticateJWT, examController.getAllExams);
+router.get('/', examController.getAllExams);
 
 // Get a specific exam by ID
-router.get('/:id',authenticateJWT, examController.getExamById);
+router.get('/:id', examController.getExamById);
 
 // Create a new exam
-router.post('/',authenticateJWT, examController.createExam);
+router.post('/', examController.createExam);
 
 // Update an existing exam by ID
-router.put('/:id',authenticateJWT, examController.updateExam);
+router.put('/:id', examController.updateExam);
 
 // Delete an exam by ID
-router.delete('/:id',authenticateJWT, examController.deleteExam);
+router.delete('/:id', examController.deleteExam);
 
 export default router;

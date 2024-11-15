@@ -1,9 +1,13 @@
 import { IExamSubmission } from '../interfaces/exam-submission';
+import { QuestionType } from '../interfaces/question';
 import db from '../models';
 import { CreateResultAttributes } from '../models/result';
 import { roundUpToDecimal } from '../utils/helper';
 import * as gradingService from './gradingService';
-
+import { AssemblyAI } from 'assemblyai'
+const client = new AssemblyAI({
+  apiKey: process.env.A_API_KEY || ""
+})
 
 interface SkillScores {
   listening: number;
@@ -16,34 +20,46 @@ interface SkillScores {
 export const processSubmission = async (submissionData: IExamSubmission) => {
   const { userId, examId, answers } = submissionData;
 
-  // Count of questions for each skill
-  const questionCounts: SkillScores = { listening: 35, reading: 40, speaking: 3, writing: 2 }; // Example values for each skill
-
-  // Initialize raw scores for each skill
+  const questionCounts: SkillScores = { listening: 35, reading: 40, speaking: 3, writing: 2 };
   const rawScores: SkillScores = { listening: 0, reading: 0, speaking: 0, writing: 0 };
 
-  // Start a database transaction
   const transaction = await db.sequelize.transaction();
   try {
-    for (const answer of answers) {
-      const question = await db.Question.findByPk(answer.questionId);
+    // Batch fetch all questions
+    const questionIds = answers.map((answer) => answer.questionId);
+    const questions = await db.Question.findAll({
+      where: { id: questionIds },
+      transaction
+    });
+    const questionsMap = new Map(questions.map((q) => [q.id, q]));
 
-      if (!question) throw new Error(`Question ID ${answer.questionId} not found`);
-      const questionData = question.get({ plain: true });
+    await Promise.all(
+      answers.map(async (answer) => {
+        const question = questionsMap.get(answer.questionId);
+        if (!question) throw new Error(`Question ID ${answer.questionId} not found`);
 
-      // Process based on question type
-      if (questionData.type === 'LISTENING' || questionData.type === 'READING') {
-        const isCorrect = await handleMultipleChoiceAnswer(userId, examId, answer, transaction);
-        if (isCorrect) {
-          questionData.type === 'LISTENING' ? rawScores.listening++ : rawScores.reading++;
+        const questionData = question.get({ plain: true });
+
+        if (questionData.type === 'LISTENING' || questionData.type === 'READING') {
+          const isCorrect = await handleMultipleChoiceAnswer(userId, examId, answer, transaction);
+          if (isCorrect) {
+            questionData.type === 'LISTENING' ? rawScores.listening++ : rawScores.reading++;
+          }
+        } else if (questionData.type === 'WRITING' || questionData.type === 'SPEAKING') {
+          const freeTextScore = await handleFreeTextAnswer(
+            userId,
+            examId,
+            answer,
+            questionData.content,
+            transaction,
+            questionData.type
+          );
+
+          questionData.type === 'SPEAKING' ? (rawScores.speaking += freeTextScore) : (rawScores.writing += freeTextScore);
         }
-      } else if (questionData.type === 'SPEAKING' || questionData.type === 'WRITING') {
-        const freeTextScore = await handleFreeTextAnswer(userId, examId, answer, questionData.content, transaction);
-        questionData.type === 'SPEAKING' ? rawScores.speaking += freeTextScore : rawScores.writing += freeTextScore;
-      }
-    }
+      })
+    );
 
-    // Calculate final scores for each skill out of 9.0
     const finalScores: SkillScores = {
       listening: (rawScores.listening / questionCounts.listening) * 9,
       reading: (rawScores.reading / questionCounts.reading) * 9,
@@ -51,12 +67,10 @@ export const processSubmission = async (submissionData: IExamSubmission) => {
       writing: rawScores.writing / questionCounts.writing,
     };
 
-    // Round the final scores to one decimal place
     for (const skill in finalScores) {
       finalScores[skill as keyof SkillScores] = parseFloat(finalScores[skill as keyof SkillScores].toFixed(1));
     }
 
-    // Commit the transaction and return the scores
     await transaction.commit();
     return { success: true, scores: finalScores };
   } catch (error) {
@@ -89,9 +103,18 @@ const handleFreeTextAnswer = async (
   examId: number,
   answer: { questionId: number; selectedAnswer: string },
   questionContent: string,
-  transaction: any
+  transaction: any,
+  questionType:QuestionType
 ): Promise<number> => {
-  const grading = await gradingService.gradeFreeTextAnswer(questionContent, answer.selectedAnswer);
+  let answerContent = answer.selectedAnswer
+  if(questionType == 'SPEAKING') {
+    const transcript = await client.transcripts.transcribe({
+      audio_url: answer.selectedAnswer
+    })
+    answerContent  = transcript?.text??""
+  }
+
+  const grading = await gradingService.gradeFreeTextAnswer(questionContent, answerContent);
   await saveAnswer(userId, examId, answer.questionId, answer.selectedAnswer, null, transaction, grading.score, grading.feedback);
   return grading.score;
 };
@@ -175,18 +198,23 @@ export const getOverallScoreBySkill = async (userId: number, examId: number): Pr
     const questionType = result.question?.type; // Use optional chaining for safety
     const resultScore = result.score || 0;
 
-    if (questionType === 'LISTENING') rawScores.listening += resultScore;
-    else if (questionType === 'READING') rawScores.reading += resultScore;
+    if (questionType === 'LISTENING' && result.score == 1) rawScores.listening += 1;
+    else if (questionType === 'READING' &&result.score == 1) rawScores.reading += 1;
     else if (questionType === 'SPEAKING') rawScores.speaking += resultScore;
     else if (questionType === 'WRITING') rawScores.writing += resultScore;
   });
 
   const finalScores: SkillScores = {
-    listening: roundUpToDecimal((rawScores.listening / questionCounts.listening) * 9, 1),
-    reading: roundUpToDecimal((rawScores.reading / questionCounts.reading) * 9, 1),
-    speaking: roundUpToDecimal((rawScores.speaking / questionCounts.speaking), 1),
-    writing: roundUpToDecimal((rawScores.writing / questionCounts.writing), 1),
+    listening: (rawScores.listening / questionCounts.listening) * 9,
+    reading: (rawScores.reading / questionCounts.reading)* 9 ,
+    speaking: rawScores.speaking /questionCounts.speaking,
+    writing: rawScores.writing / questionCounts.writing,
   };
+
+  for (const skill in finalScores) {
+    finalScores[skill as keyof SkillScores] = parseFloat(finalScores[skill as keyof SkillScores].toFixed(1));
+  }
+  console.log("finalScores", finalScores, rawScores)
 
 
   return finalScores;

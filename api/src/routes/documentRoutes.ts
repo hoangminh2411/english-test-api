@@ -6,18 +6,18 @@ import * as documentController from '../controllers/documentController';
 const router = express.Router();
 
 // Create a new document
-router.post('/', authenticateJWT, documentController.createDocument);
+router.post('/',  documentController.createDocument);
 
 // Retrieve a document by URL
-router.get('/:url', authenticateJWT, documentController.getDocumentByUrl);
+router.get('/:url',  documentController.getDocumentByUrl);
 
 // Optional: Retrieve a document by ID
-router.get('/id/:id', authenticateJWT, documentController.getDocumentById);
+router.get('/id/:id',  documentController.getDocumentById);
 
 // Optional: Update a document by ID
-router.put('/id/:id', authenticateJWT, documentController.updateDocument);
+router.put('/id/:id',  documentController.updateDocument);
 
 // Optional: Delete a document by ID
-router.delete('/id/:id', authenticateJWT, documentController.deleteDocument);
+router.delete('/id/:id', documentController.deleteDocument);
 
 export default router;

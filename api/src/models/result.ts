@@ -1,23 +1,20 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
-
-// Define the attributes of the Result model
 export interface ResultAttributes {
   id: number;
-  userId: number;
-  examId: number;
-  questionId: number; // Include questionId for association
+  attemptId: number; // New foreign key
+  questionId: number;
   selectedAnswer: string;
-  isCorrect?: boolean | null;
+  isCorrect?: boolean;
   score?: number;
   feedback?: string;
 }
-export type CreateResultAttributes = Omit<ResultAttributes, 'id' | 'createdAt' | 'updatedAt'>;
-// Extend the Model class to include the ResultAttributes
+
+export type CreateResultAttributes = Omit<ResultAttributes, 'id'>;
+
 export class Result extends Model<ResultAttributes> implements ResultAttributes {
   public id!: number;
-  public userId!: number;
-  public examId!: number;
+  public attemptId!: number; // Updated
   public questionId!: number;
   public selectedAnswer!: string;
   public isCorrect?: boolean;
@@ -25,13 +22,11 @@ export class Result extends Model<ResultAttributes> implements ResultAttributes 
   public feedback?: string;
 
   public static associate(models: any) {
+    Result.belongsTo(models.ExamAttempt, { as: 'attempt', foreignKey: 'attemptId' });
     Result.belongsTo(models.Question, { as: 'question', foreignKey: 'questionId' });
-    Result.belongsTo(models.User, { as: 'candidate', foreignKey: 'userId' });
-    Result.belongsTo(models.Exam, { as: 'exam', foreignKey: 'examId' });
   }
 }
 
-// Initialize the Result model
 export default (sequelize: Sequelize) => {
   Result.init(
     {
@@ -40,25 +35,25 @@ export default (sequelize: Sequelize) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      userId: {
+      attemptId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-      },
-      examId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
+        field: 'attempt_id',
       },
       questionId: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        field: 'question_id',
       },
       selectedAnswer: {
         type: DataTypes.TEXT,
         allowNull: false,
+        field: 'selected_answer',
       },
       isCorrect: {
         type: DataTypes.BOOLEAN,
         allowNull: true,
+        field: 'is_correct',
       },
       score: {
         type: DataTypes.INTEGER,
@@ -73,6 +68,7 @@ export default (sequelize: Sequelize) => {
       sequelize,
       tableName: 'results',
       timestamps: true,
+      underscored: true,
     }
   );
 
