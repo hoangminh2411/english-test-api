@@ -2,13 +2,13 @@ import { IExam } from "../interfaces/exam";
 import { RawExamData } from "../interfaces/raw-exam-data";
 
 
-export const toExamDTO = (examData: RawExamData): IExam => {
+export const toExamDTO = (examData: RawExamData, isGetQuestions =false): any => {
   return {
     id: examData.id,
     name: examData.name,
     note: examData.note,
     totalTime: examData.totalTime,
-    questions: examData.questions.map((question: any) => ({
+    questions:isGetQuestions ?  examData.questions.map((question: any) => ({
       id: question.id,
       examId: question.examId,
       parentId: question.parentId,
@@ -34,8 +34,8 @@ export const toExamDTO = (examData: RawExamData): IExam => {
       updatedBy: question.updatedBy,
       updatedAt: question.updatedAt,
       createdAt: question.createdAt,
-    })),
-    totalExamies: examData.totalExamies || 0,
+    })): [],
+    totalExamies:  new Set(examData?.attempts?.map((q) => q.userId)).size,
     totalQuestions: examData.questions.length,
     totalSkills: new Set(examData.questions.map((q: any) => q.type)).size,
     createdBy: examData.createdBy,

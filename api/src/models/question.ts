@@ -3,6 +3,7 @@ import { DataTypes, Model, Sequelize } from 'sequelize';
 
 // Define the attributes of the Question model
 export interface QuestionAttributes {
+  [x: string]: any;
   id: number;
   examId: number;
   content: string;

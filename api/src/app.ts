@@ -24,7 +24,7 @@ app.use(morgan('dev'));
 app.use('/api', mainRoutes);
 
 // Kết nối tới cơ sở dữ liệu và đồng bộ các bảng
-db.sequelize.sync({ alter: true }).then(() => {
+db.sequelize.sync().then(() => {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}.`);

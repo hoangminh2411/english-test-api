@@ -10,9 +10,15 @@ export interface ExamAttemptAttributes {
   finishedAt?: Date;
 }
 
-export type CreateExamAttemptAttributes = Omit<ExamAttemptAttributes, 'id'>;
+export type CreationExamAttemptAttributes = Omit<
+  ExamAttemptAttributes,
+  'id' | 'createdAt' | 'updatedAt'
+>;
 
-export class ExamAttempt extends Model<ExamAttemptAttributes> implements ExamAttemptAttributes {
+export class ExamAttempt
+  extends Model<ExamAttemptAttributes, CreationExamAttemptAttributes>
+  implements ExamAttemptAttributes
+{
   public id!: number;
   public examId!: number;
   public userId!: number;

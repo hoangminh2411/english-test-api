@@ -1,5 +1,5 @@
 import express from 'express';
-import * as examController from '../controllers/examController';
+import * as examController from '../controllers/exam.controller';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.get('/', examController.getAllExams);
 router.get('/:id', examController.getExamById);
 
 // Create a new exam
-router.post('/', examController.createExam);
+router.post('/',authenticateJWT, examController.createExam);
 
 // Update an existing exam by ID
 router.put('/:id', examController.updateExam);

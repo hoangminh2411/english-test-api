@@ -1,7 +1,7 @@
 // routes/documentRoutes.ts
 import express from 'express';
 import { authenticateJWT } from '../middlewares/authMiddleware'; // Protect routes
-import * as documentController from '../controllers/documentController';
+import * as documentController from '../controllers/document.controller';
 
 const router = express.Router();
 

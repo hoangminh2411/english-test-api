@@ -41,7 +41,9 @@ export interface RawExamData {
   note: string;
   totalTime: number;
   questions: RawQuestion[];
-  totalExamies?: number;
+  attempts?: {
+    userId:number
+  }[]
   createdBy: IdName;
   updatedBy: IdName;
   updatedAt: string;
